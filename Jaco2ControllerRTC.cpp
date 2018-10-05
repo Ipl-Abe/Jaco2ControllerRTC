@@ -174,20 +174,15 @@ RTC::ReturnCode_t Jaco2ControllerRTC::onExecute(RTC::UniqueId ec_id)
 {
     if(m_axis_LIn.isNew()){
         m_axis_LIn.read();
-      //  std::cout << "data : " << m_axis_L.data[0] << std::endl;
     }
     if(m_button_LIn.isNew()){
         m_button_LIn.read();
-        //std::cout << "button data :" << m_button_L.data[0] << std::endl;
     }
-
     if(m_axis_RIn.isNew()){
         m_axis_RIn.read();
-       // std::cout << "data : " << m_axis_R.data[0] << std::endl;
     }
     if(m_button_RIn.isNew()){
         m_button_RIn.read();
-        //std::cout << "button data :" << m_button_R.data[0] << std::endl;
     }
     // time step
     dt = 0.005;
@@ -213,17 +208,18 @@ RTC::ReturnCode_t Jaco2ControllerRTC::onExecute(RTC::UniqueId ec_id)
         double q = m_angle_L.data[i];
        // std::cout << " qref_L : "<< rad2deg(qref_L[i]) << " q : " << rad2deg(q) << endl;        
         double gain = (qref_L[i] - q);
-        if(fabs(gain)>10.0) gain = 0.0;
+        //if(fabs(gain)>10.0) gain = 0.0;
         m_torque_L.data[i] = gain * VEL_GAIN / dt;
         qold_L[i] = q;
+       // std::cout << "output velocity "<< i <<" : " << m_torque_L.data[i] << std::endl;
     }
     
     for(int i=0; i < 9; ++i){
         double q = m_angle_R.data[i];
         // std::cout << " qref_R : "<<  qref_R[i] << " rad : " << q << endl;
-         double gain = (qref_R[i] -q);
+         double gain = (qref_R[i] - q);
         // std::cout << "gain : " << gain << endl;
-        if(fabs(gain)>10.0) gain = 0.0;
+        //if(fabs(gain)>10.0) gain = 0.0;
         m_torque_R.data[i] = gain * VEL_GAIN / dt;
         qold_R[i] = q;
     }
@@ -322,17 +318,17 @@ void Jaco2ControllerRTC::updateTargetJointAnglesBYInverseKinematicks()
         }
 
         // // 手首の操作
-        if(m_button_L.data[1]){
-            R *= RotateX(deg2rad(0.2));
-        }
-        if(m_button_L.data[2]){
-            R *= RotateX(deg2rad(-0.2));
-        }
         if(m_button_L.data[0]){
-            R *= RotateY(deg2rad(0.2));
+            R *= RotateX(deg2rad(0.4));
         }
         if(m_button_L.data[3]){
-            R *= RotateY(deg2rad(-0.2));
+            R *= RotateX(deg2rad(-0.4));
+        }
+        if(m_button_L.data[2]){
+            R *= RotateY(deg2rad(0.4));
+        }
+        if(m_button_L.data[1]){
+            R *= RotateY(deg2rad(-0.4));
         }
 
         baseToWrist->calcInverseKinematics(p, R);
@@ -347,8 +343,8 @@ void Jaco2ControllerRTC::updateTargetJointAnglesBYInverseKinematicks()
             dq_fingerL -= 0.004;
         }
         VectorXd RPY = rpyFromRot(ikWrist->attitude());
-        // cout << "p(x) : " << p(0) << " p(y) : " << p(1) << " p(z) : "<< p(2) << endl;
-        // cout << "Roll : " << RPY(0) << " Pitch : " << RPY(1) << " YAW : "<< RPY(2) << endl;
+         cout << "p(x) : " << p(0) << " p(y) : " << p(1) << " p(z) : "<< p(2) << endl;
+         cout << "Roll : " << rad2deg(RPY(0)) << " Pitch : " << rad2deg(RPY(1)) << " YAW : "<< rad2deg(RPY(2)) << endl;
         if(m_button_L.data[5]){
             dq_fingerL += 0.004;
         }
@@ -382,16 +378,16 @@ void Jaco2ControllerRTC::updateTargetJointAnglesBYInverseKinematicks()
 
         // // 手首の操作
         if(m_button_R.data[1]){
-            R2 *= RotateZ(deg2rad(0.2));
+            R2 *= RotateZ(deg2rad(0.4));
         }
         if(m_button_R.data[2]){
-            R2 *= RotateZ(deg2rad(-0.2));
+            R2 *= RotateZ(deg2rad(-0.4));
         }
         if(m_button_R.data[3]){
-            R2 *= RotateY(deg2rad(0.2));
+            R2 *= RotateY(deg2rad(0.4));
         }
         if(m_button_R.data[0]){
-            R2 *= RotateY(deg2rad(-0.2));
+            R2 *= RotateY(deg2rad(-0.4));
         }
 
         baseToWrist2->calcInverseKinematics(p2, R2);
@@ -403,14 +399,14 @@ void Jaco2ControllerRTC::updateTargetJointAnglesBYInverseKinematicks()
 
          }
         VectorXd RPY2 = rpyFromRot(ikWrist2->attitude());
-        // cout << "p(x) : " << p2(0) << " p(y) : " << p2(1) << " p(z) : "<< p2(2) << endl;
-        // cout << "Roll : " << RPY2(0) << " Pitch : " << RPY2(1) << " YAW : "<< RPY2(2) << endl;
+         cout << "p2(x) : " << p2(0) << " p2(y) : " << p2(1) << " p2(z) : "<< p2(2) << endl;
+         cout << "Roll2 : " << rad2deg(RPY2(0)) << " Pitch2 : " << rad2deg(RPY2(1)) << " YAW2 : "<< rad2deg(RPY2(2)) << endl;
         double dq_fingerR = 0.0;
         if(m_button_R.data[4]){
-            dq_fingerR -= 0.004;
+            dq_fingerR += 0.004;
         }
         if(m_button_R.data[5]){
-            dq_fingerR += 0.004;
+            dq_fingerR -= 0.004;
         }
         for(int i = 6; i < 9; ++i){
             qref_R[i] += dq_fingerR;
@@ -441,6 +437,20 @@ void Jaco2ControllerRTC::sequence(){
             flag = true;
             buttonflag = true;
             leftArm = true;
+        }
+        if(m_button_L.data[3] && !buttonflag ){
+            seqNum = 2;
+            flag = true;
+            buttonflag = true;
+            leftArm = true;
+            rightArm = true;
+        }
+        if(m_button_R.data[9] && !buttonflag ){
+            seqNum = 3;
+            flag = true;
+            buttonflag = true;
+            leftArm = true;
+            rightArm = true;
         }
         if(m_button_R.data[12] && !buttonflag ){
             seqNum = 4;
@@ -503,7 +513,7 @@ void Jaco2ControllerRTC::sequence(){
                 Vector3(p3.head<3>()), ikWrist2->calcRfromAttitude(rotFromRpy(Vector3(p3.tail<3>()))))){
                 for(int i=0; i < 6; i++){
                     Link* joint = baseToWrist2->joint(i);
-                    std::cout << "joint Id : " << joint->jointId() << endl; 
+                    //std::cout << "joint Id : " << joint->jointId() << endl; 
                     qref_R[i] = joint->q();
                 }
             }
@@ -524,17 +534,6 @@ bool Jaco2ControllerRTC::perform(int seqNum){
 
     cout << "in perform" << endl;
         if (seqNum == 1){
-            ikBody = body->clone();
-            ikWrist = ikBody->link("ARM1_HAND");
-            Link* base = ikBody->rootLink();
-            baseToWrist = getCustomJointPath(ikBody, base, ikWrist);
-            base->p().setZero();
-            base->R().setIdentity();
-            baseToWrist->calcForwardKinematics();
-            VectorXd position(3);
-            position = ikWrist->p();
-            //cout << "p(x) : " << position(0) << " p(y) : " << position(1) << " p(z) : "<< position(2) << endl;
-    
             VectorXd p0(6);
             p0.head<3>() = ikWrist->p();
             p0.tail<3>() = rpyFromRot(ikWrist->attitude());
@@ -546,25 +545,67 @@ bool Jaco2ControllerRTC::perform(int seqNum){
             wristInterpolator.appendSample(currentTime + 2.0, p0);
             wristInterpolator.appendSample(currentTime + 7.0, p1);
             wristInterpolator.update();
-        }      
+        }   
+        if (seqNum == 2){
+            // Spreder grasp position
+            // Left Arm
+            VectorXd p0(6);
+            p0.head<3>() = ikWrist->p();
+            p0.tail<3>() = rpyFromRot(ikWrist->attitude());
+            VectorXd p1(6), p2(6); 
+            
+            p2.head<3>() = Vector3(0.3, 0.252, 0.4);
+            p2.tail<3>() = toRadianVector3(75.01, -86.3719, 18.6424);
+            
+            wristInterpolator.clear();
+            wristInterpolator.appendSample(currentTime + 1.0, p0);
+            wristInterpolator.appendSample(currentTime + 3.0, p2);
+            wristInterpolator.update();
+
+            // Right Arm
+            VectorXd p0_2(6);
+            VectorXd p1_2(6); 
+            p0_2.head<3>() = ikWrist2->p();
+            p0_2.tail<3>() = rpyFromRot(ikWrist2->attitude());
+            p1_2.head<3>() = Vector3(0.7158, -0.2390, 0.6176);
+            p1_2.tail<3>() = toRadianVector3(178.757, -2.9108, 91.1925); 
+            
+            wristInterpolator2.clear();
+            wristInterpolator2.appendSample(currentTime + 1.0, p0_2);
+            wristInterpolator2.appendSample(currentTime + 4.0, p1_2);
+            wristInterpolator2.update();
+        }
+        if (seqNum == 3){
+            // Spreder correct grasping positoin
+            // Left Arm
+            VectorXd p0(6);
+            p0.head<3>() = ikWrist->p();
+            p0.tail<3>() = rpyFromRot(ikWrist->attitude());
+            VectorXd p1(6), p2(6); 
+            
+            p2.head<3>() = Vector3(0.34955, 0.13568, 0.55485);
+            p2.tail<3>() = rpyFromRot(ikWrist->attitude());
+            
+            wristInterpolator.clear();
+            wristInterpolator.appendSample(currentTime + 1.0, p0);
+            wristInterpolator.appendSample(currentTime + 4.0, p2);
+            wristInterpolator.update();
+
+            // Right Arm
+            VectorXd p0_2(6);
+            VectorXd p1_2(6); 
+            p0_2.head<3>() = ikWrist2->p();
+            p0_2.tail<3>() = rpyFromRot(ikWrist2->attitude());
+            p1_2.head<3>() = Vector3(0.5885, 0.0268, 0.7140);
+            p1_2.tail<3>() = rpyFromRot(ikWrist2->attitude());
+
+            wristInterpolator2.clear();
+            wristInterpolator2.appendSample(currentTime + 1.0, p0_2);
+            wristInterpolator2.appendSample(currentTime + 4.0, p1_2);
+            wristInterpolator2.update();
+        }          
         if (seqNum == 4){
-            cout << "seq 4" << endl;
-            // ikBody = body->clone();
-            // ikWrist = ikBody->link("ARM1_HAND");
-            // ikWrist2 = ikBody->link("ARM2_HAND");
-            // Link* base = ikBody->rootLink();
-            // baseToWrist = getCustomJointPath(ikBody,base, ikWrist);
-            // baseToWrist2 = getCustomJointPath(ikBody, base, ikWrist2);
-            // base->p().setZero();
-            // base->R().setIdentity();
-
-            // baseToWrist->calcForwardKinematics();
-            // baseToWrist2->calcForwardKinematics();
-
-            VectorXd position(3);
-            VectorXd position2(3);
-            position = ikWrist->p();
-            position2 = ikWrist2->p();
+            cout << "Home Position" << endl;
             
             // Left Arm 
             VectorXd p0(6);
@@ -572,24 +613,26 @@ bool Jaco2ControllerRTC::perform(int seqNum){
 
             p0.head<3>() = ikWrist->p();
             p0.tail<3>() = rpyFromRot(ikWrist->attitude()); 
-            p1.head<3>() = Vector3(0.5214, 0.2164, 0.4957);
-            p1.tail<3>() = toRadianVector3(165.0, -25.29, -130.74);  
+            p1.head<3>() = Vector3(0.4747, 0.1141, 0.6501);
+            p1.tail<3>() = toRadianVector3(86.0, 0.576, 84.216);  
             //p1.tail<3>() = Vector3(2.880,-0.4415,-2.2826);
             wristInterpolator.clear();
-            wristInterpolator.appendSample(currentTime + 3.0, p0);
-            wristInterpolator.appendSample(currentTime + 10.0, p1);
+            wristInterpolator.appendSample(currentTime + 1.0, p0);
+            wristInterpolator.appendSample(currentTime + 4.0, p1);
             wristInterpolator.update();
 
             // Right Arm
-            p0.head<3>() = ikWrist2->p();
-            p0.tail<3>() = rpyFromRot(ikWrist2->attitude());
-            p1.tail<3>() = toRadianVector3(164.0, -14.88, 94.70); 
+            VectorXd p0_2(6);
+            VectorXd p1_2(6); 
+            p0_2.head<3>() = ikWrist2->p();
+            p0_2.tail<3>() = rpyFromRot(ikWrist2->attitude());
+            p1_2.head<3>() = Vector3(0.5012,-0.3078, 0.4738);
+            p1_2.tail<3>() = toRadianVector3(87.35, -2.587, 91.0897); 
             //p1.head<3>() = Vector3(0.5837, -0.2210, 0.5254);
-            
             //p1.tail<3>() = Vector3(2.2869, -0.2599, 1.6529);  
             wristInterpolator2.clear();
-            wristInterpolator2.appendSample(currentTime + 3.0, p0);
-            wristInterpolator2.appendSample(currentTime + 10.0, p1);
+            wristInterpolator2.appendSample(currentTime + 1.0, p0_2);
+            wristInterpolator2.appendSample(currentTime + 4.0, p1_2);
             wristInterpolator2.update();
         }      
 
